@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta
+    http-equiv="Content-Security-Policy"
+    content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src http://ip-api.com http://api.ipify.org;"
+  />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ion Security</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="titlebar">
+      <div class="brand">
+        <div class="brand-mark">IS</div>
+        <div>
+          <div class="brand-title">Ion Security</div>
+          <div class="brand-subtitle">Sicurezza reale del PC, bootstrap automatico, assistente locale incluso</div>
+        </div>
+      </div>
+      <div class="titlebar-controls">
+        <button class="tb-btn" id="tb-min" title="Minimizza">-</button>
+        <button class="tb-btn" id="tb-max" title="Massimizza">+</button>
+        <button class="tb-btn tb-close" id="tb-close" title="Nascondi nel tray">x</button>
+      </div>
+    </header>
+
+    <div class="layout">
+      <aside class="sidebar">
+        <div class="sidebar-block">
+          <div class="status-chip" id="overall-chip">Verifica in corso</div>
+          <h1 class="sidebar-title">Centro Sicurezza</h1>
+          <p class="sidebar-copy">L'app verifica Windows Defender, firewall, SmartScreen, VPN e rete con dati reali.</p>
+        </div>
+
+        <nav class="nav-list">
+          <button class="nav-btn active" data-tab="dashboard">Panoramica</button>
+          <button class="nav-btn" data-tab="monitor">Rete</button>
+          <button class="nav-btn" data-tab="processes">Processi</button>
+          <button class="nav-btn" data-tab="vpn">VPN</button>
+          <button class="nav-btn" data-tab="assistant">Assistente</button>
+          <button class="nav-btn" data-tab="settings">Impostazioni</button>
+        </nav>
+
+        <div class="sidebar-foot">
+          <div class="foot-label">IP pubblico</div>
+          <div class="foot-value" id="my-ip">Caricamento...</div>
+          <div class="foot-help" id="my-ip-vpn">VPN non verificata</div>
+        </div>
+      </aside>
+
+      <main class="content">
+        <section class="tab active" id="tab-dashboard">
+          <div class="hero-card">
+            <div>
+              <div class="eyebrow">Stato del dispositivo</div>
+              <h2>Protezione del PC sotto controllo</h2>
+              <p class="hero-copy" id="hero-summary">Sto verificando i componenti di sicurezza principali.</p>
+            </div>
+            <div class="score-ring">
+              <div class="score-ring-inner">
+                <span id="security-score">--</span>
+                <small>/100</small>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel bootstrap-panel">
+            <div class="panel-head">
+              <div>
+                <div class="eyebrow">Bootstrap automatico</div>
+                <h3>Preparazione del sistema</h3>
+              </div>
+              <button class="primary-btn" id="bootstrap-btn">Installa e prepara</button>
+            </div>
+            <p class="panel-copy" id="bootstrap-summary">Ion Security puo preparare cartelle, installare WireGuard, aggiornare Defender e attivare il firewall.</p>
+            <div class="issue-list" id="bootstrap-steps">
+              <div class="empty-state">Nessuna operazione ancora eseguita.</div>
+            </div>
+          </div>
+
+          <div class="metrics-grid">
+            <article class="metric-card">
+              <div class="metric-title">Antivirus</div>
+              <div class="metric-status" id="metric-defender">In verifica</div>
+              <div class="metric-copy" id="metric-defender-copy">Sto leggendo lo stato di Microsoft Defender.</div>
+            </article>
+            <article class="metric-card">
+              <div class="metric-title">Firewall</div>
+              <div class="metric-status" id="metric-firewall">In verifica</div>
+              <div class="metric-copy" id="metric-firewall-copy">Controllo dei profili di rete Windows.</div>
+            </article>
+            <article class="metric-card">
+              <div class="metric-title">VPN</div>
+              <div class="metric-status" id="metric-vpn">In verifica</div>
+              <div class="metric-copy" id="metric-vpn-copy">Verifica installazione WireGuard e tunnel attivo.</div>
+            </article>
+            <article class="metric-card">
+              <div class="metric-title">SmartScreen</div>
+              <div class="metric-status" id="metric-smartscreen">In verifica</div>
+              <div class="metric-copy" id="metric-smartscreen-copy">Controllo filtro reputazione di Windows.</div>
+            </article>
+          </div>
+
+          <div class="dashboard-grid">
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <div class="eyebrow">Azioni consigliate</div>
+                  <h3>Cosa sistemare ora</h3>
+                </div>
+                <button class="ghost-btn" id="refresh-security-btn">Aggiorna stato</button>
+              </div>
+              <div class="issue-list" id="issue-list">
+                <div class="empty-state">Nessun dato ancora disponibile.</div>
+              </div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <div class="eyebrow">Panoramica rapida</div>
+                  <h3>Segnali dal sistema</h3>
+                </div>
+              </div>
+              <div class="system-glance" id="system-glance"></div>
+              <div class="log-card">
+                <div class="log-title">Registro eventi</div>
+                <div class="log-area" id="dash-log"></div>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <section class="tab" id="tab-monitor">
+          <div class="section-head">
+            <div>
+              <div class="eyebrow">Traffico di rete</div>
+              <h2>Connessioni attive e rischio</h2>
+            </div>
+            <button class="ghost-btn" id="refresh-btn">Aggiorna elenco</button>
+          </div>
+
+          <div class="filter-row">
+            <input class="filter-input" id="ip-filter" placeholder="Filtra per IP, paese, porta o ISP" />
+            <label class="check-row">
+              <input type="checkbox" id="show-suspicious-only" />
+              Mostra solo elementi ad alto rischio
+            </label>
+          </div>
+
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>IP remoto</th>
+                  <th>Paese</th>
+                  <th>Citta</th>
+                  <th>ISP</th>
+                  <th>Porta</th>
+                  <th>Proto</th>
+                  <th>Stato</th>
+                  <th>Rischio</th>
+                </tr>
+              </thead>
+              <tbody id="conn-tbody">
+                <tr><td colspan="8" class="empty-cell">Caricamento connessioni...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="tab" id="tab-processes">
+          <div class="section-head">
+            <div>
+              <div class="eyebrow">Controllo processi</div>
+              <h2>Verifica delle esecuzioni locali</h2>
+            </div>
+            <button class="primary-btn" id="scan-proc-btn">Avvia scansione</button>
+          </div>
+
+          <div class="proc-stats">
+            <div class="stat-box">
+              <span class="stat-label">Processi sicuri o normali</span>
+              <strong id="ps-safe">0</strong>
+            </div>
+            <div class="stat-box">
+              <span class="stat-label">Da monitorare</span>
+              <strong id="ps-warn">0</strong>
+            </div>
+            <div class="stat-box danger">
+              <span class="stat-label">Sospetti</span>
+              <strong id="ps-danger">0</strong>
+            </div>
+          </div>
+
+          <div class="alert-box" id="proc-alert" hidden>
+            <span id="proc-alert-text"></span>
+            <button id="proc-alert-close">Chiudi</button>
+          </div>
+
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Processo</th>
+                  <th>PID</th>
+                  <th>Memoria</th>
+                  <th>Stato</th>
+                </tr>
+              </thead>
+              <tbody id="proc-tbody">
+                <tr><td colspan="4" class="empty-cell">Nessuna scansione eseguita.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="tab" id="tab-vpn">
+          <div class="section-head">
+            <div>
+              <div class="eyebrow">Protezione traffico</div>
+              <h2>VPN WireGuard</h2>
+            </div>
+          </div>
+
+          <div class="vpn-card">
+            <div>
+              <div class="vpn-status-label" id="vpn-state-label">VPN non connessa</div>
+              <div class="vpn-status-copy" id="vpn-state-sub">Il traffico non sta passando in un tunnel verificato.</div>
+            </div>
+            <div class="vpn-ip-panel">
+              <span>IP corrente</span>
+              <strong id="vpn-current-ip">--</strong>
+            </div>
+          </div>
+
+          <div class="setup-card">
+            <h3>Stato configurazione VPN</h3>
+            <p>Ion Security puo installare WireGuard automaticamente, ma per collegarti a una VPN reale serve almeno un file `.conf` del provider dentro <code id="config-path">%USERPROFILE%\ion-security-vpn\</code>.</p>
+            <div class="setup-actions">
+              <button class="ghost-btn" id="open-vpn-dir-btn">Apri cartella config</button>
+              <button class="ghost-btn" onclick="window.electronAPI.openExternal('https://account.protonvpn.com/downloads')">Scarica configurazioni</button>
+            </div>
+          </div>
+
+          <div class="server-grid" id="server-grid">
+            <div class="empty-state">Caricamento server VPN...</div>
+          </div>
+
+          <div class="vpn-actions">
+            <button class="primary-btn" id="vpn-connect-btn" disabled>Connetti VPN</button>
+            <button class="ghost-btn danger" id="vpn-disconnect-btn" hidden>Disconnetti VPN</button>
+          </div>
+        </section>
+
+        <section class="tab" id="tab-assistant">
+          <div class="section-head">
+            <div>
+              <div class="eyebrow">Assistente incluso</div>
+              <h2>Assistente locale integrato</h2>
+            </div>
+          </div>
+
+          <div class="assistant-note">
+            Nessuna API key: l'assistente e gia dentro l'app e risponde usando lo stato reale raccolto da rete, processi, Defender e VPN.
+          </div>
+
+          <div class="ai-chat" id="ai-chat">
+            <div class="chat-messages" id="chat-messages">
+              <div class="chat-msg assistant">
+                <div class="msg-bubble">Posso spiegarti cosa sta succedendo sul PC usando solo i dati reali raccolti localmente. Chiedimi di rete, processi, VPN o problemi di sicurezza.</div>
+              </div>
+            </div>
+
+            <div class="quick-actions">
+              <button class="quick-btn" onclick="quickQuery('Riassumi i problemi di sicurezza attuali del PC')">Riassunto sicurezza</button>
+              <button class="quick-btn" onclick="quickQuery('Spiegami le connessioni di rete da verificare')">Connessioni di rete</button>
+              <button class="quick-btn" onclick="quickQuery('Come verifico che la VPN sia configurata bene?')">Verifica VPN</button>
+            </div>
+
+            <div class="chat-input-row">
+              <textarea class="chat-input" id="chat-input" rows="3" placeholder="Fai una domanda sui dati raccolti dall'app"></textarea>
+              <button class="primary-btn" id="send-btn">Invia</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="tab" id="tab-settings">
+          <div class="section-head">
+            <div>
+              <div class="eyebrow">Configurazione</div>
+              <h2>Impostazioni app</h2>
+            </div>
+          </div>
+
+          <div class="settings-grid">
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <div class="eyebrow">Bootstrap</div>
+                  <h3>Preparazione automatica</h3>
+                </div>
+              </div>
+              <p class="panel-copy">Al primo avvio l'app puo installare WireGuard e rafforzare alcuni controlli Windows. La configurazione VPN del provider resta comunque necessaria.</p>
+            </section>
+
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <div class="eyebrow">Monitoraggio</div>
+                  <h3>Intervallo scansione rete</h3>
+                </div>
+              </div>
+              <select class="settings-select" id="scan-interval">
+                <option value="2000">Ogni 2 secondi</option>
+                <option value="4000">Ogni 4 secondi</option>
+                <option value="10000">Ogni 10 secondi</option>
+              </select>
+              <div class="helper-text">Riduci l'intervallo solo se vuoi piu reattivita e accetti piu carico locale.</div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <div class="eyebrow">Pubblicazione</div>
+                  <h3>Build Windows</h3>
+                </div>
+              </div>
+              <p class="panel-copy">L'app parte come eseguibile Windows e usa privilegi elevati per leggere o impostare parti reali della sicurezza del sistema.</p>
+            </section>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script src="js/renderer.js"></script>
+</body>
+</html>

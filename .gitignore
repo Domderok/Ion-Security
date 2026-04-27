@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.ion-security/
+desktop.ini
+*.log
+*.tmp
+*.bak
+Thumbs.db
