@@ -9,6 +9,8 @@ let classifiedConnections = [];
 let geoCache = {};
 let logLines = [];
 let lastProcesses = [];
+let activeProtection = { enabled: false, blockedIps: [] };
+let protectionAlerts = [];
 
 window.addEventListener('DOMContentLoaded', async () => {
   setupWindowControls();
@@ -22,6 +24,8 @@ window.addEventListener('DOMContentLoaded', async () => {
   const settings = await api.loadSettings();
   document.getElementById('scan-interval').value = String(settings.scanIntervalMs || 4000);
   document.getElementById('config-path').textContent = settings.vpnConfigDir;
+  activeProtection = await api.getActiveProtectionStatus();
+  renderActiveProtection();
 
   const sysInfo = await api.getSystemInfo();
   renderSystemGlance(sysInfo);
@@ -48,6 +52,11 @@ window.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('refresh-security-btn').addEventListener('click', refreshSecurityStatus);
   document.getElementById('open-vpn-dir-btn').addEventListener('click', () => api.openPath(document.getElementById('config-path').textContent));
   document.getElementById('bootstrap-btn').addEventListener('click', () => runBootstrap(false));
+  document.getElementById('active-protection-toggle').addEventListener('change', async (event) => {
+    activeProtection = await api.setActiveProtection(event.target.checked);
+    renderActiveProtection();
+    addLog(`Protezione attiva ${activeProtection.enabled ? 'abilitata' : 'disabilitata'}.`, activeProtection.enabled ? 'ok' : 'warn');
+  });
 });
 
 function setupWindowControls() {
@@ -114,6 +123,17 @@ function renderBootstrapResult(result) {
       <strong>${step.name}</strong>: ${escapeHtml(step.details)}
     </div>
   `).join('');
+}
+
+function renderActiveProtection() {
+  const toggle = document.getElementById('active-protection-toggle');
+  const label = document.getElementById('active-protection-label');
+  const copy = document.getElementById('active-protection-copy');
+  toggle.checked = Boolean(activeProtection.enabled);
+  label.textContent = activeProtection.enabled ? 'Protezione attiva ON' : 'Protezione attiva OFF';
+  copy.textContent = activeProtection.enabled
+    ? `Ion Security blocca automaticamente gli IP remoti classificati ad alto rischio. IP bloccati: ${activeProtection.blockedIps.length}.`
+    : 'Quando e disattiva, l app mostra gli IP sospetti ma non prova a bloccarli automaticamente.';
 }
 
 async function refreshSecurityStatus() {
@@ -191,10 +211,45 @@ async function handleNetworkUpdate(rawConnections) {
 
   renderMonitorTable(classifiedConnections);
 
+  const protectionResults = await api.inspectAndProtectConnections(classifiedConnections);
+  if (protectionResults.length) {
+    activeProtection = await api.getActiveProtectionStatus();
+    renderActiveProtection();
+    for (const result of protectionResults) {
+      const message = result.success
+        ? result.alreadyBlocked
+          ? `IP sospetto gia bloccato: ${result.ip}`
+          : `IP sospetto bloccato: ${result.ip} (${result.processName}:${result.pid})`
+        : result.skipped
+          ? `IP rilevato ma non bloccabile automaticamente: ${result.ip}`
+          : `Tentativo di blocco fallito per ${result.ip}: ${result.reason}`;
+      protectionAlerts.unshift({ ...result, message });
+      protectionAlerts = protectionAlerts.slice(0, 20);
+      addLog(message, result.success ? 'err' : 'warn');
+    }
+    renderProtectionAlerts();
+  }
+
   const riskyCount = classifiedConnections.filter((connection) => connection.computedRisk === 'high').length;
   if (riskyCount > 0) {
     addLog(`Rilevate ${riskyCount} connessioni da verificare.`, 'warn');
   }
+}
+
+function renderProtectionAlerts() {
+  const container = document.getElementById('protection-alerts');
+  if (!protectionAlerts.length) {
+    container.innerHTML = '<div class="empty-state">Nessun IP sospetto bloccato finora.</div>';
+    return;
+  }
+
+  container.innerHTML = protectionAlerts.map((alert) => `
+    <div class="issue-row ${alert.success ? 'success' : ''}">
+      <strong>${alert.ip}</strong> porta ${alert.port || '-'} ${alert.processName ? `• ${escapeHtml(alert.processName)}` : ''}
+      <br />
+      ${escapeHtml(alert.message)}
+    </div>
+  `).join('');
 }
 
 function renderMonitorTable(records) {

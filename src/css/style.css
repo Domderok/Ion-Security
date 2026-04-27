@@ -452,6 +452,24 @@ select {
   flex-wrap: wrap;
 }
 
+.toggle-shell {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.toggle-shell input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--brand);
+}
+
+.toggle-text {
+  color: var(--ink);
+}
+
 .filter-input,
 .settings-select,
 .chat-input {
