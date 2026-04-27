@@ -1,0 +1,54 @@
+{
+  "name": "ion-security",
+  "version": "1.1.0",
+  "description": "Desktop app Electron per sicurezza Windows con controlli reali su Defender, firewall, VPN e assistenza AI opzionale.",
+  "main": "src/main.js",
+  "author": "Ion Security",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win nsis --x64",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder"
+  },
+  "dependencies": {
+    "axios": "^1.6.0",
+    "node-fetch": "^2.7.0"
+  },
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1"
+  },
+  "build": {
+    "appId": "com.ion.security",
+    "productName": "Ion Security",
+    "artifactName": "${productName}-Setup-${version}.${ext}",
+    "asar": true,
+    "files": [
+      "src/**/*",
+      "package.json"
+    ],
+    "extraMetadata": {
+      "main": "src/main.js"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "requestedExecutionLevel": "requireAdministrator",
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Ion Security"
+    }
+  }
+}
