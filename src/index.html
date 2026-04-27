@@ -73,6 +73,23 @@
           <div class="panel bootstrap-panel">
             <div class="panel-head">
               <div>
+                <div class="eyebrow">Protezione attiva</div>
+                <h3>Blocco automatico IP sospetti</h3>
+              </div>
+              <label class="toggle-shell">
+                <input type="checkbox" id="active-protection-toggle" />
+                <span class="toggle-text" id="active-protection-label">Protezione attiva OFF</span>
+              </label>
+            </div>
+            <p class="panel-copy" id="active-protection-copy">Quando e attiva, Ion Security segnala gli IP sospetti rilevati, prova a bloccarli via Windows Firewall e ti mostra subito l'evento.</p>
+            <div class="issue-list" id="protection-alerts">
+              <div class="empty-state">Nessun IP sospetto bloccato finora.</div>
+            </div>
+          </div>
+
+          <div class="panel bootstrap-panel">
+            <div class="panel-head">
+              <div>
                 <div class="eyebrow">Bootstrap automatico</div>
                 <h3>Preparazione del sistema</h3>
               </div>

@@ -9,6 +9,8 @@ let mainWindow;
 let tray;
 let monitorInterval = null;
 let activeVpnTunnel = null;
+let blockedIps = new Set();
+let recentlyAlertedIps = new Map();
 
 const CONFIG_DIR = path.join(os.homedir(), '.ion-security');
 const CONFIG_PATH = path.join(CONFIG_DIR, 'config.json');
@@ -17,7 +19,9 @@ const KNOWN_DANGEROUS_PORTS = new Set(['4444', '1337', '9999', '5555', '6667']);
 const DEFAULT_CONFIG = {
   scanIntervalMs: 4000,
   lastVpnTunnel: '',
-  bootstrapCompletedAt: null
+  bootstrapCompletedAt: null,
+  activeProtectionEnabled: true,
+  blockedIps: []
 };
 
 function createWindow() {
@@ -103,6 +107,11 @@ function saveConfig(patch) {
   return next;
 }
 
+function loadBlockedIpsFromConfig() {
+  const config = loadConfig();
+  blockedIps = new Set(Array.isArray(config.blockedIps) ? config.blockedIps : []);
+}
+
 function execCommand(command, timeout = 20000) {
   return new Promise((resolve) => {
     exec(command, { timeout, windowsHide: true, maxBuffer: 1024 * 1024 * 16 }, (error, stdout, stderr) => {
@@ -114,6 +123,79 @@ function execCommand(command, timeout = 20000) {
       });
     });
   });
+}
+
+async function getProcessDetailsByPid(pid) {
+  if (!pid || Number.isNaN(Number(pid))) {
+    return null;
+  }
+
+  const escapedPid = Number(pid);
+  const command = `powershell -NoProfile -Command "Get-CimInstance Win32_Process -Filter \\"ProcessId = ${escapedPid}\\" | Select-Object Name,ProcessId,ExecutablePath,CommandLine | ConvertTo-Json -Compress"`;
+  const result = await execCommand(command, 10000);
+  if (!result.ok || !result.stdout.trim()) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(result.stdout);
+  } catch {
+    return null;
+  }
+}
+
+async function blockIpAddress(ip, reason = 'Sospetto rilevato da Ion Security') {
+  if (!ip || ip === '127.0.0.1' || ip === '::1' || ip.startsWith('192.168.') || ip.startsWith('10.') || ip.startsWith('172.') || ip.startsWith('fe80')) {
+    return { success: false, skipped: true, reason: 'IP locale o non valido' };
+  }
+
+  if (blockedIps.has(ip)) {
+    return { success: true, alreadyBlocked: true, ruleName: `IonSecurityBlock-${ip}` };
+  }
+
+  const ruleName = `IonSecurityBlock-${ip}`;
+  const command = `powershell -NoProfile -Command "New-NetFirewallRule -DisplayName '${ruleName}' -Direction Outbound -Action Block -RemoteAddress '${ip}'"`;
+  const result = await execCommand(command, 20000);
+  if (!result.ok) {
+    return { success: false, error: result.stderr || result.error || 'Blocco firewall non riuscito', ruleName };
+  }
+
+  blockedIps.add(ip);
+  saveConfig({ blockedIps: Array.from(blockedIps) });
+  return { success: true, ruleName };
+}
+
+function shouldAlertIp(ip) {
+  const now = Date.now();
+  const last = recentlyAlertedIps.get(ip) || 0;
+  if (now - last < 60000) {
+    return false;
+  }
+  recentlyAlertedIps.set(ip, now);
+  return true;
+}
+
+async function maybeProtectConnection(connection) {
+  const config = loadConfig();
+  if (!config.activeProtectionEnabled) {
+    return null;
+  }
+
+  const process = await getProcessDetailsByPid(connection.pid);
+  const blockResult = await blockIpAddress(connection.remoteIp, 'Connessione sospetta rilevata');
+
+  return {
+    ip: connection.remoteIp,
+    port: connection.remotePort,
+    pid: connection.pid,
+    processName: process?.Name || process?.name || 'N/A',
+    executablePath: process?.ExecutablePath || '',
+    success: Boolean(blockResult?.success),
+    alreadyBlocked: Boolean(blockResult?.alreadyBlocked),
+    skipped: Boolean(blockResult?.skipped),
+    reason: blockResult?.reason || blockResult?.error || '',
+    blockedAt: new Date().toISOString()
+  };
 }
 
 async function checkWireGuardInstalled() {
@@ -386,6 +468,7 @@ function buildLocalAssistantReply(question, context) {
 
 app.whenReady().then(() => {
   ensureDirectories();
+  loadBlockedIpsFromConfig();
   createWindow();
   createTray();
   startNetworkMonitor();
@@ -512,6 +595,45 @@ ipcMain.handle('vpn-disconnect', async () => {
 
 ipcMain.handle('security-status', async () => getSecurityStatus());
 
+ipcMain.handle('active-protection-status', async () => {
+  const config = loadConfig();
+  return {
+    enabled: Boolean(config.activeProtectionEnabled),
+    blockedIps: Array.from(blockedIps)
+  };
+});
+
+ipcMain.handle('set-active-protection', async (event, enabled) => {
+  const config = saveConfig({ activeProtectionEnabled: Boolean(enabled) });
+  return {
+    enabled: Boolean(config.activeProtectionEnabled),
+    blockedIps: Array.from(blockedIps)
+  };
+});
+
+ipcMain.handle('block-ip', async (event, ip) => blockIpAddress(ip));
+
+ipcMain.handle('inspect-and-protect-connections', async (event, records) => {
+  const alerts = [];
+
+  for (const record of records) {
+    if (record.computedRisk !== 'high') {
+      continue;
+    }
+
+    if (!shouldAlertIp(record.remoteIp)) {
+      continue;
+    }
+
+    const protection = await maybeProtectConnection(record);
+    if (protection) {
+      alerts.push(protection);
+    }
+  }
+
+  return alerts;
+});
+
 ipcMain.handle('set-scan-interval', async (event, intervalMs) => {
   const normalized = Math.max(2000, Number(intervalMs) || 4000);
   saveConfig({ scanIntervalMs: normalized });
@@ -525,7 +647,8 @@ ipcMain.handle('load-settings', async () => {
     scanIntervalMs: Number(config.scanIntervalMs) || 4000,
     vpnConfigDir: VPN_CONFIG_DIR,
     lastVpnTunnel: config.lastVpnTunnel || '',
-    bootstrapCompletedAt: config.bootstrapCompletedAt
+    bootstrapCompletedAt: config.bootstrapCompletedAt,
+    activeProtectionEnabled: Boolean(config.activeProtectionEnabled)
   };
 });
 

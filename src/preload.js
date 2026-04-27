@@ -19,6 +19,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   vpnDisconnect: () => ipcRenderer.invoke('vpn-disconnect'),
 
   getSecurityStatus: () => ipcRenderer.invoke('security-status'),
+  getActiveProtectionStatus: () => ipcRenderer.invoke('active-protection-status'),
+  setActiveProtection: (enabled) => ipcRenderer.invoke('set-active-protection', enabled),
+  blockIp: (ip) => ipcRenderer.invoke('block-ip', ip),
+  inspectAndProtectConnections: (records) => ipcRenderer.invoke('inspect-and-protect-connections', records),
   setScanInterval: (intervalMs) => ipcRenderer.invoke('set-scan-interval', intervalMs),
   loadSettings: () => ipcRenderer.invoke('load-settings'),
   getBootstrapStatus: () => ipcRenderer.invoke('bootstrap-status'),
