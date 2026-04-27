@@ -1,52 +1,54 @@
 # Ion Security
 
-Ion Security e un'app desktop Windows orientata a protezione locale, monitoraggio reale della rete e reazione automatica a connessioni sospette.
+Made by Domderok.
 
-## Funzioni principali
+Ion Security is a Windows desktop app focused on local protection, real network monitoring, and automatic reaction to suspicious remote connections.
 
-- Controlla lo stato reale di Microsoft Defender tramite `Get-MpComputerStatus`
-- Verifica i profili del firewall Windows tramite `Get-NetFirewallProfile`
-- Controlla SmartScreen
-- Monitora connessioni attive reali con `netstat`
-- Classifica connessioni remote per rischio usando IP, porte e geolocalizzazione
-- Mostra l'IP remoto sospetto all'utente
-- Prova a bloccare automaticamente IP sospetti tramite `Windows Firewall`
-- Registra gli IP gia bloccati per evitare duplicati
-- Gestisce tunnel WireGuard tramite file `.conf`
-- Include un assistente locale integrato che legge i dati reali raccolti dall'app
+## Main Features
 
-## Protezione attiva
+- Reads the real Microsoft Defender status through `Get-MpComputerStatus`
+- Verifies Windows Firewall profiles through `Get-NetFirewallProfile`
+- Checks SmartScreen status
+- Monitors real active connections with `netstat`
+- Classifies remote connections by risk using IPs, ports, and geolocation
+- Shows suspicious remote IPs directly to the user
+- Attempts to block suspicious IPs automatically through `Windows Firewall`
+- Stores already blocked IPs to avoid duplicate actions
+- Manages WireGuard tunnels through `.conf` files
+- Includes a built-in local assistant that explains the real data collected by the app
 
-Quando la protezione attiva e abilitata, Ion Security:
+## Active Protection
 
-- segnala all'utente gli IP remoti classificati ad alto rischio
-- prova a espellerli bloccando il traffico verso quell'IP con una regola firewall
-- associa quando possibile IP, porta, PID e nome processo
+When active protection is enabled, Ion Security:
 
-## Bootstrap automatico
+- alerts the user when a high-risk remote IP is detected
+- tries to expel it by blocking traffic to that IP with a firewall rule
+- links the event to IP, port, PID, and process name when available
 
-Al primo avvio l'app puo:
+## Automatic Bootstrap
 
-- creare le cartelle necessarie
-- installare WireGuard con `winget`
-- attivare il firewall Windows
-- aggiornare le firme di Defender
-- impostare SmartScreen su modalita `Warn`
+On first launch, the app can:
 
-## Limiti realistici
+- create its required folders
+- install WireGuard with `winget`
+- enable Windows Firewall
+- update Microsoft Defender signatures
+- set SmartScreen to `Warn`
 
-- Non puo promettere il blocco del 100% di tutte le minacce
-- Non sostituisce completamente un antivirus engine proprietario
-- Per una VPN reale serve comunque almeno un file `.conf` del provider nella cartella VPN
-- Il blocco automatico dipende dai dati che Windows espone davvero al momento del rilevamento
+## Realistic Limits
 
-## Requisiti
+- It cannot honestly guarantee blocking 100% of all threats
+- It does not fully replace a dedicated proprietary antivirus engine
+- A real VPN connection still requires at least one provider `.conf` file inside the VPN folder
+- Automatic blocking depends on the real system and network data exposed by Windows at detection time
 
-- Windows 10 o Windows 11
-- Permessi amministrativi per funzioni firewall, Defender e VPN
-- Node.js 18+ per sviluppo locale
+## Requirements
 
-## Sviluppo
+- Windows 10 or Windows 11
+- Administrator privileges for firewall, Defender, and VPN actions
+- Node.js 18+ for local development
+
+## Development
 
 ```bash
 npm install
@@ -59,12 +61,12 @@ npm start
 npm run pack
 ```
 
-La build pronta all'uso viene generata in `dist/win-unpacked/`.
+The ready-to-run app build is generated in `dist/win-unpacked/`.
 
-## Pubblicazione GitHub
+## GitHub Distribution
 
-Per distribuire l'app agli utenti finali conviene pubblicare una release GitHub con un archivio della cartella `win-unpacked`, cosi l'utente scarica, estrae e avvia `Ion Security.exe`.
+For end users, the recommended distribution method is a GitHub Release containing a zipped `win-unpacked` build, so users can download it, extract it, and launch `Ion Security.exe`.
 
-## Nota
+## Note
 
-Ion Security e una base concreta di difesa locale e monitoraggio reale, ma per una pubblicazione piu professionale servono ancora firma del codice, icona definitiva, policy privacy, test piu ampi e una pipeline release piu robusta.
+Ion Security is a concrete base for local defense and real monitoring, but a more professional public release still needs code signing, a final icon, a privacy policy, broader testing, and a stronger release pipeline.

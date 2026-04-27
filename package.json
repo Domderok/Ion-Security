@@ -1,9 +1,9 @@
 {
   "name": "ion-security",
   "version": "1.1.0",
-  "description": "Desktop app Electron per sicurezza Windows con controlli reali su Defender, firewall, VPN e assistenza AI opzionale.",
+  "description": "Windows desktop security app with real Defender, firewall, VPN, and active protection monitoring.",
   "main": "src/main.js",
-  "author": "Ion Security",
+  "author": "Made by Domderok",
   "license": "MIT",
   "scripts": {
     "start": "electron .",
